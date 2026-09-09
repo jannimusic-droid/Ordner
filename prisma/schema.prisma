@@ -1,0 +1,241 @@
+// Ordner — zentrales Management- und Steuerungssystem
+// Datenmodell: Unternehmen -> Abteilungen -> Themen -> Aufgaben
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN // Administrator
+  MANAGER // Führungskraft
+  EMPLOYEE // Mitarbeiter
+}
+
+enum Priority {
+  CRITICAL
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum TopicStatus {
+  NEW
+  OPEN
+  IN_PROGRESS
+  WAITING
+  BLOCKED
+  DONE
+  ARCHIVED
+}
+
+enum TaskStatus {
+  OPEN
+  IN_PROGRESS
+  WAITING
+  BLOCKED
+  DONE
+}
+
+enum ActivityAction {
+  CREATED
+  OWNER_CHANGED
+  PARTICIPANT_ADDED
+  PARTICIPANT_REMOVED
+  PRIORITY_CHANGED
+  STATUS_CHANGED
+  DUE_DATE_CHANGED
+  NEXT_STEP_CHANGED
+  COMMENT_ADDED
+  COMPLETED
+  REOPENED
+  ARCHIVED
+  UPDATED
+}
+
+enum EntityType {
+  TOPIC
+  TASK
+}
+
+enum NotificationType {
+  TASK_ASSIGNED
+  TASK_PARTICIPANT
+  TOPIC_ASSIGNED
+  TOPIC_PARTICIPANT
+  STATUS_CHANGED
+  NEW_COMMENT
+  DUE_SOON
+  OVERDUE
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         Role     @default(EMPLOYEE)
+  departmentId String?
+  department   Department? @relation("DepartmentMembers", fields: [departmentId], references: [id])
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+
+  ownedTopics       Topic[]            @relation("TopicOwner")
+  topicParticipants TopicParticipant[]
+  ownedTasks        Task[]             @relation("TaskOwner")
+  taskParticipants  TaskParticipant[]
+  comments          Comment[]
+  activities        ActivityLogEntry[]
+  notifications     Notification[]
+  managedDepartments Department[]      @relation("DepartmentLead")
+
+  @@index([departmentId])
+}
+
+model Department {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  leadId      String?
+  lead        User?    @relation("DepartmentLead", fields: [leadId], references: [id])
+  createdAt   DateTime @default(now())
+
+  members User[]  @relation("DepartmentMembers")
+  topics  Topic[]
+
+  @@index([leadId])
+}
+
+model Topic {
+  id                String      @id @default(cuid())
+  title             String
+  description       String
+  departmentId      String
+  department        Department  @relation(fields: [departmentId], references: [id])
+  crossDepartment   Boolean     @default(false)
+  ownerId           String
+  owner             User        @relation("TopicOwner", fields: [ownerId], references: [id])
+  priority          Priority    @default(MEDIUM)
+  status            TopicStatus @default(NEW)
+  startDate         DateTime    @default(now())
+  dueDate           DateTime?
+  nextStep          String?
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+
+  participants TopicParticipant[]
+  tasks        Task[]
+  comments     Comment[]
+  activities   ActivityLogEntry[]
+  notifications Notification[]
+
+  @@index([departmentId])
+  @@index([ownerId])
+  @@index([status])
+  @@index([priority])
+}
+
+model TopicParticipant {
+  id      String @id @default(cuid())
+  topicId String
+  topic   Topic  @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  userId  String
+  user    User   @relation(fields: [userId], references: [id])
+
+  @@unique([topicId, userId])
+  @@index([userId])
+}
+
+model Task {
+  id               String     @id @default(cuid())
+  title            String
+  description      String
+  topicId          String
+  topic            Topic      @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  ownerId          String
+  owner            User       @relation("TaskOwner", fields: [ownerId], references: [id])
+  priority         Priority   @default(MEDIUM)
+  status           TaskStatus @default(OPEN)
+  startDate        DateTime   @default(now())
+  dueDate          DateTime?
+  nextStep         String?
+  estimatedEffort  String?
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+
+  participants TaskParticipant[]
+  comments     Comment[]
+  activities   ActivityLogEntry[]
+  notifications Notification[]
+
+  @@index([topicId])
+  @@index([ownerId])
+  @@index([status])
+  @@index([priority])
+  @@index([dueDate])
+}
+
+model TaskParticipant {
+  id     String @id @default(cuid())
+  taskId String
+  task   Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  @@unique([taskId, userId])
+  @@index([userId])
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  text      String
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id])
+  topicId   String?
+  topic     Topic?   @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  taskId    String?
+  task      Task?    @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@index([topicId])
+  @@index([taskId])
+}
+
+model ActivityLogEntry {
+  id          String         @id @default(cuid())
+  entityType  EntityType
+  action      ActivityAction
+  description String
+  userId      String
+  user        User           @relation(fields: [userId], references: [id])
+  topicId     String?
+  topic       Topic?         @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  taskId      String?
+  task        Task?          @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  createdAt   DateTime       @default(now())
+
+  @@index([topicId])
+  @@index([taskId])
+  @@index([createdAt])
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id])
+  type      NotificationType
+  message   String
+  read      Boolean          @default(false)
+  topicId   String?
+  topic     Topic?           @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  taskId    String?
+  task      Task?            @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  createdAt DateTime         @default(now())
+
+  @@index([userId, read])
+  @@index([createdAt])
+}
