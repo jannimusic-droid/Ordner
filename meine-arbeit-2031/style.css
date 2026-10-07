@@ -68,7 +68,6 @@ h1 span {
 }
 
 .lead {
-  max-width: 40ch;
   margin: 28px 0 0;
   font-size: clamp(1.05rem, 2.2vw, 1.3rem);
   color: var(--grey);
@@ -186,45 +185,52 @@ h1 span {
 }
 
 /* ---------- Mood chips ---------- */
-.hint { margin: -12px 0 20px; color: var(--grey); font-size: .9rem; }
+.moods {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+  gap: 20px;
+}
 
-.chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 14px;
-  align-items: flex-start;
+.mood {
+  padding: 22px;
+  border: 2px solid var(--black);
+  border-radius: var(--radius);
+  background: var(--white);
 }
 
 .chip {
-  border: 2px solid var(--black);
-  border-radius: 28px;
-  background: var(--white);
-  max-width: 100%;
-  transition: background .2s ease;
-}
-
-.chip summary {
-  list-style: none;
-  cursor: pointer;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 10px;
-  padding: 12px 22px;
-  font-weight: 700;
+  margin: 0 0 16px;
+  padding: 10px 20px;
+  border: 2px solid var(--black);
+  border-radius: 999px;
   font-size: 1.05rem;
-  user-select: none;
+  font-weight: 700;
 }
-.chip summary::-webkit-details-marker { display: none; }
-.chip summary::after { content: "+"; margin-left: 4px; font-weight: 400; }
-.chip[open] summary::after { content: "\2013"; }
 
-.chip summary:focus-visible { outline: 3px solid var(--blue-deep); outline-offset: 3px; border-radius: 28px; }
-
-.chip p {
-  margin: 0;
-  padding: 0 22px 16px;
-  max-width: 44ch;
+.mood p {
+  margin: 0 0 16px;
   font-size: .95rem;
+  color: var(--grey);
+}
+
+.tags {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tags li {
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: var(--blue-soft);
+  font-size: .85rem;
+  font-weight: 600;
 }
 
 .dot {
@@ -234,13 +240,16 @@ h1 span {
   border: 2px solid var(--black);
 }
 
-.chip--joy .dot   { background: var(--blue); }
-.chip--worry .dot { background: var(--white); }
-.chip--role .dot  { background: var(--black); }
+.mood--joy .chip   { background: var(--blue); }
+.mood--worry .chip { background: var(--white); }
+.mood--worry .dot  { background: var(--white); }
+.mood--joy .dot    { background: var(--white); }
 
-.chip:hover, .chip[open] { background: var(--blue-soft); }
-.chip--role[open] { background: var(--black); color: var(--white); }
-.chip--role[open] .dot { background: var(--blue); border-color: var(--blue); }
+.mood--role { background: var(--black); color: var(--white); }
+.mood--role .chip { background: var(--blue); color: var(--black); }
+.mood--role .dot  { background: var(--black); }
+.mood--role p     { color: #d4dde5; }
+.mood--role .tags li { background: #1f2a33; color: var(--white); }
 
 /* ---------- Footer ---------- */
 .footer {
