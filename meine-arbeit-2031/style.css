@@ -223,7 +223,7 @@ h1 span {
 .chip p {
   margin: 0;
   padding: 0 22px 16px;
-  max-width: 32ch;
+  max-width: 44ch;
   font-size: .95rem;
 }
 
@@ -255,3 +255,5 @@ h1 span {
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; }
 }
+
+.facts--two { grid-template-columns: repeat(auto-fit, minmax(min(100%, 400px), 1fr)); }
